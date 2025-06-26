@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTT 熱門文章預測器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            padding: 40px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1em;
+        }
+        
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-weight: bold;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .result-container {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .result-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .heat-meter {
+            background: #e9ecef;
+            border-radius: 50px;
+            height: 30px;
+            position: relative;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .heat-fill {
+            height: 100%;
+            border-radius: 50px;
+            transition: width 1s ease-in-out;
+            background: linear-gradient(90deg, #28a745 0%, #ffc107 50%, #dc3545 100%);
+        }
+        
+        .heat-score {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .prediction-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .prediction-badge.hot {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .prediction-badge.normal {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .recommendation {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .recommendation h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        .recommendation-text {
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .example-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #e9ecef;
+        }
+        
+        .example-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .example-item:hover {
+            border-color: #667eea;
+            transform: translateY(-1px);
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .main-content {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 PTT 熱門文章預測器</h1>
+            <p>輸入您的文章，AI 將預測它在 PTT 上的熱門程度！</p>
+        </div>
+        
+        <div class="main-content">
+            <form id="predictionForm">
+                <div class="form-group">
+                    <label for="title">📝 文章標題 *</label>
+                    <input 
+                        type="text" 
+                        id="title" 
+                        name="title" 
+                        placeholder="例如：[問卦] 為什麼現在年輕人都不想生小孩？"
+                        required
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="content">📄 文章內容 (選填)</label>
+                    <textarea 
+                        id="content" 
+                        name="content" 
+                        placeholder="輸入您的文章內容，內容越詳細預測越準確..."
+                    ></textarea>
+                </div>
+                
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    🚀 開始預測
+                </button>
+            </form>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>AI 正在分析您的文章...</p>
+            </div>
+            
+            <div class="error-message" id="errorMessage"></div>
+            
+            <div class="result-container" id="resultContainer">
+                <div class="result-header">
+                    <span class="prediction-badge" id="predictionBadge">熱門文章</span>
+                </div>
+                
+                <div class="heat-meter">
+                    <div class="heat-fill" id="heatFill"></div>
+                    <div class="heat-score" id="heatScore">85%</div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="probabilityValue">85%</div>
+                        <div class="stat-label">熱門機率</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="confidenceValue">高</div>
+                        <div class="stat-label">信心等級</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="heatScoreValue">85</div>
+                        <div class="stat-label">熱度分數</div>
+                    </div>
+                </div>
+                
+                <div class="recommendation">
+                    <h3>💡 優化建議</h3>
+                    <div class="recommendation-text" id="recommendationText">
+                        您的文章很有潛力成為熱門！建議在人流量高的時段發文。
+                    </div>
+                </div>
+            </div>
+            
+            <div class="example-section">
+                <h3>💭 試試這些範例</h3>
+                <div class="example-item" onclick="fillExample('[問卦] 為什麼台灣年輕人都不想生小孩？', '最近身邊的朋友都結婚了，但是幾乎沒有人想要生小孩...')">
+                    <strong>[問卦] 為什麼台灣年輕人都不想生小孩？</strong>
+                </div>
+                <div class="example-item" onclick="fillExample('[新聞] 台積電股價再創新高突破千元', '台積電今日股價突破1000元大關，創歷史新高...')">
+                    <strong>[新聞] 台積電股價再創新高突破千元</strong>
+                </div>
+                <div class="example-item" onclick="fillExample('[心得] 今天去吃了很好吃的拉麵', '推薦大家一家超棒的拉麵店，湯頭濃郁...')">
+                    <strong>[心得] 今天去吃了很好吃的拉麵</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('title').value.trim();
+            const content = document.getElementById('content').value.trim();
+            
+            if (!title) {
+                showError('請輸入文章標題');
+                return;
+            }
+            
+            showLoading(true);
+            hideError();
+            hideResult();
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        content: content
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || '預測失敗');
+                }
+                
+                const result = await response.json();
+                showResult(result);
+                
+            } catch (error) {
+                showError('預測失敗：' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        });
+        
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (show) {
+                loading.style.display = 'block';
+                submitBtn.disabled = true;
+                submitBtn.textContent = '預測中...';
+            } else {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 開始預測';
+            }
+        }
+        
+        function showResult(result) {
+            const container = document.getElementById('resultContainer');
+            const badge = document.getElementById('predictionBadge');
+            const heatFill = document.getElementById('heatFill');
+            const heatScore = document.getElementById('heatScore');
+            const probabilityValue = document.getElementById('probabilityValue');
+            const confidenceValue = document.getElementById('confidenceValue');
+            const heatScoreValue = document.getElementById('heatScoreValue');
+            const recommendationText = document.getElementById('recommendationText');
+            
+            // 設置預測結果徽章
+            if (result.is_hot) {
+                badge.textContent = '🔥 熱門文章';
+                badge.className = 'prediction-badge hot';
+            } else {
+                badge.textContent = '📝 普通文章';
+                badge.className = 'prediction-badge normal';
+            }
+            
+            // 設置熱度條
+            const percentage = result.heat_score;
+            heatFill.style.width = percentage + '%';
+            heatScore.textContent = percentage + '%';
+            
+            // 設置統計數據
+            probabilityValue.textContent = Math.round(result.hot_probability * 100) + '%';
+            confidenceValue.textContent = result.confidence_level;
+            heatScoreValue.textContent = result.heat_score;
+            
+            // 設置建議
+            recommendationText.textContent = result.recommendation;
+            
+            // 顯示結果
+            container.style.display = 'block';
+            
+            // 滾動到結果
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+        
+        function hideResult() {
+            document.getElementById('resultContainer').style.display = 'none';
+        }
+        
+        function fillExample(title, content) {
+            document.getElementById('title').value = title;
+            document.getElementById('content').value = content;
+            
+            // 滾動到表單頂部
+            document.getElementById('predictionForm').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html> 
