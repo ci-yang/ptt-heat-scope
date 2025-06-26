@@ -1,0 +1,48 @@
+# 基礎套件
+requests==2.31.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
+pandas>=1.5.0
+numpy>=1.21.0
+
+# 網頁爬蟲
+selenium==4.15.0
+fake-useragent==1.4.0
+urllib3==2.0.7
+
+# 資料處理與驗證
+pydantic==2.4.2
+jsonschema==4.19.1
+tqdm>=4.64.0
+
+# 深度學習與機器學習
+torch>=1.13.0
+transformers>=4.20.0
+scikit-learn>=1.1.0
+datasets==2.14.5
+
+# API 服務
+fastapi>=0.85.0
+uvicorn>=0.18.0
+python-multipart>=0.0.5
+
+# 日誌與監控
+loguru==0.7.2
+psutil==5.9.6
+
+# 開發工具
+pytest==7.4.3
+black==23.10.1
+isort==5.12.0
+flake8==6.1.0
+
+# 其他工具
+python-dotenv>=0.19.0
+schedule==1.2.0
+click==8.1.7
+
+# ML and Data Science
+jieba>=0.42.1
+
+# Web Framework
+jinja2>=3.1.0 
